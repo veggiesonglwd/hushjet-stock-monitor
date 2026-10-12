@@ -1,6 +1,6 @@
 # HushJet stock monitor
 
-Checks Dyson HushJet (HJ10) pages at Harvey Norman, Best Denki and Gain City (Singapore) every 5 minutes via GitHub Actions and sends a Telegram message when one becomes in stock or open for pre-order.
+Checks Dyson HushJet (HJ10) pages at Harvey Norman, Best Denki, Gain City, Dyson SG and FairPrice every 5 minutes via GitHub Actions and sends a Telegram message when one becomes in stock or open for pre-order.
 
 ## Setup
 1. Repo → Settings → Secrets and variables → Actions → New repository secret:

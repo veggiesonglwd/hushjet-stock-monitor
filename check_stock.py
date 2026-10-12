@@ -28,6 +28,14 @@ PRODUCTS = [
      "https://www.gaincity.com/dyson-hushjet-air-purifier-hj01-white-silver-297842-01-tb0012062"),
     ("Gain City", "Black/Teal",
      "https://www.gaincity.com/dyson-hushjet-air-purifier-hj01-black-teal-297826-01-tb0012063"),
+    ("Dyson 官网", "White/Silver",
+     "https://www.dyson.com.sg/hushjet-purifier-compact-white-silver"),
+    ("Dyson 官网", "Black/Teal",
+     "https://www.dyson.com.sg/hushjet-purifier-compact-black-teal"),
+    ("FairPrice", "White/Silver",
+     "https://www.fairprice.com.sg/product/dyson-hushjettm-purifier-compact-whitesilver"),
+    ("FairPrice", "Black/Teal",
+     "https://www.fairprice.com.sg/product/dyson-hushjettm-purifier-compact-blackteal"),
 ]
 
 STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "state.json")
@@ -81,7 +89,41 @@ def visible_text(html):
     return re.sub(r"\s+", " ", text).lower()
 
 
-def classify(html):
+PREORDER_BANNER = re.compile(r"pre-?order online|pre-?order now", re.I)
+
+
+def classify_harveynorman(html):
+    # The "PRE-ORDER ONLINE" banner and climate-voucher button show even when
+    # nothing can be ordered. The only reliable signal is the real add-to-cart
+    # submit button (name="dispatch[checkout.add..<id>]"), which is absent
+    # while the page shows the out-of-stock block.
+    if "dispatch[checkout.add" in html:
+        return "PREORDER" if PREORDER_BANNER.search(visible_text(html)) else "IN_STOCK"
+    return "OUT_OF_STOCK"
+
+
+def classify_dyson(html):
+    # Out of stock pages show "Currently out of stock" + "Notify Me".
+    if "Currently out of stock" in html or "Notify Me" in html:
+        return "OUT_OF_STOCK"
+    if re.search(r"toCart|add to (cart|basket)", html, re.I):
+        return "IN_STOCK"
+    return "UNKNOWN"
+
+
+def classify_fairprice(html):
+    if "Out of stock online" in html:
+        return "OUT_OF_STOCK"
+    return jsonld_availability(html) or "UNKNOWN"
+
+
+def classify(html, url=""):
+    if "harveynorman.com.sg" in url:
+        return classify_harveynorman(html)
+    if "dyson.com.sg" in url:
+        return classify_dyson(html)
+    if "fairprice.com.sg" in url:
+        return classify_fairprice(html)
     text = visible_text(html)
     # Pre-order banners take priority: Harvey Norman shows "Pre-Order" and
     # "OUT OF STOCK" on the same page while pre-orders are open.
@@ -139,7 +181,7 @@ def main():
     current, results = {}, []
     for store, colour, url in PRODUCTS:
         html, err = fetch(url)
-        status = classify(html) if html else "UNKNOWN"
+        status = classify(html, url) if html else "UNKNOWN"
         p = price(html) if html else ""
         current[url] = status
         results.append((store, colour, url, status, p, err))
@@ -152,9 +194,11 @@ def main():
         extra = f" ({err})" if err else ""
         return f"{LABELS[status]} {store} {colour} {p}{extra}\n{url}"
 
-    if previous is None:
-        # First run: send a full summary so you know the bot works.
-        msg = f"🔔 HushJet 库存监控已启动（{now} SGT）\n每 5 分钟检查一次，有货/可预订时通知你。\n\n"
+    if previous is None or any(url not in previous for _, _, url in PRODUCTS):
+        # First run, or the product list changed: send a full summary so you
+        # can confirm every page is being read correctly.
+        title = "已启动" if previous is None else "已更新监控列表"
+        msg = f"🔔 HushJet 库存监控{title}（{now} SGT）\n每 5 分钟检查一次，有货/可预订时通知你。\n\n"
         msg += "\n\n".join(line(r) for r in results)
         send_telegram(msg)
     else:

@@ -194,7 +194,11 @@ def main():
         extra = f" ({err})" if err else ""
         return f"{LABELS[status]} {store} {colour} {p}{extra}\n{url}"
 
-    if previous is None or any(url not in previous for _, _, url in PRODUCTS):
+    any_available = any(r[3] in AVAILABLE for r in results)
+    if not any_available:
+        # Everything is out of stock (or unreadable): stay quiet.
+        print("Nothing available; no Telegram message sent.")
+    elif previous is None or any(url not in previous for _, _, url in PRODUCTS):
         # First run, or the product list changed: send a full summary so you
         # can confirm every page is being read correctly.
         title = "已启动" if previous is None else "已更新监控列表"

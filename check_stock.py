@@ -207,8 +207,9 @@ def main():
         if newly:
             msg = f"🚨 Dyson HushJet 有货了！（{now} SGT）\n\n"
             msg += "\n\n".join(line(r) for r in newly)
-            msg += ("\n\n提醒：气候券只能在实体店使用，"
-                    "建议先打电话给门店确认有现货。")
+            msg += ("\n\n提醒：Harvey Norman 网上下单可以直接用气候券"
+                    "（商品页的 Apply Climate Voucher）。"
+                    "其他商家能否网上用气候券，以结账页面为准。")
             send_telegram(msg)
 
     with open(STATE_FILE, "w") as f:

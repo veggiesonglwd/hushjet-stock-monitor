@@ -4,7 +4,7 @@
 Checks each product page, classifies it as IN_STOCK / PREORDER / OUT_OF_STOCK /
 UNKNOWN, and sends a Telegram message when a page becomes available
 (IN_STOCK or PREORDER). State is kept in state.json so you are only pinged
-on a change, not every 30 minutes.
+on a change, not every 5 minutes.
 
 Env vars: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 """
@@ -154,7 +154,7 @@ def main():
 
     if previous is None:
         # First run: send a full summary so you know the bot works.
-        msg = f"🔔 HushJet 库存监控已启动（{now} SGT）\n每 30 分钟检查一次，有货/可预订时通知你。\n\n"
+        msg = f"🔔 HushJet 库存监控已启动（{now} SGT）\n每 5 分钟检查一次，有货/可预订时通知你。\n\n"
         msg += "\n\n".join(line(r) for r in results)
         send_telegram(msg)
     else:
